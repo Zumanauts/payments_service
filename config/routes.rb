@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  get 'subscription/create'
+  post 'subscription/create'
   get 'subscription/confirm'
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
