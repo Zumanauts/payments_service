@@ -5,16 +5,23 @@ class SubscriptionController < ApplicationController
   ANNUAL_SUBSCRIPTION_CODE = "price_1QyTnJIX0USGAO7Lz5v69drc"
   MONTHLY_SUBSCRIPTION_CODE = "price_1QyTm1IX0USGAO7L4HFjXLvQ"
 
+  TABULERA_SUCCESS_URL = "https://tabulera.com/checkout-success"
+  TABULERA_FAIL_URL = "https://tabulera.com/checkout-cancel"
+
   skip_before_action :verify_authenticity_token
 
   def create_session
+
+    pp params
+
     form_params = request.query_parameters
     is_monthly = form_params["monthly"]
 
     product_code = is_monthly ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
     #Validate params
-    company_name = form_params["Company Legal Name"]
+    company_name = form_params["Company-Legal-Name"]
+    raise "Company name not provided" if company_name.nil?
     instance_name = generate_portal_instance_name(company_name)
 
     full_instance_name = instance_name
@@ -35,8 +42,8 @@ class SubscriptionController < ApplicationController
 
 
     session = Stripe::Checkout::Session.create({
-                                                 success_url: 'https://tabulera.com/checkout-success',
-                                                 cancel_url: 'https://tabulera.com/checkout-cancel',
+                                                 success_url: TABULERA_SUCCESS_URL,
+                                                 cancel_url: TABULERA_FAIL_URL,
                                                  mode: 'subscription',
                                                  line_items: [{
                                                                   # For metered billing, do not pass quantity
@@ -72,8 +79,8 @@ class SubscriptionController < ApplicationController
     end
 
     session = Stripe::Checkout::Session.create({
-                                                   success_url: 'https://tabulera.com/checkout-success',
-                                                   cancel_url: 'https://tabulera.com/checkout-cancel',
+                                                   success_url: TABULERA_SUCCESS_URL,
+                                                   cancel_url: TABULERA_FAIL_URL,
                                                    mode: 'subscription',
                                                    line_items: [{
                                                                     # For metered billing, do not pass quantity
@@ -91,7 +98,6 @@ class SubscriptionController < ApplicationController
     redirect_to session.url, allow_other_host: true
 
   end
-
 
 
 
@@ -132,8 +138,8 @@ class SubscriptionController < ApplicationController
   end
 
 
-  def sync_all
-
+  rescue_from StandardError do |e|
+    redirect_to TABULERA_FAIL_URL, allow_other_host: true
   end
 
   private
