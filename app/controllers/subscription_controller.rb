@@ -139,6 +139,8 @@ class SubscriptionController < ApplicationController
 
 
   rescue_from StandardError do |e|
+    puts "Error during processing: #{$!}"
+    puts "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
     redirect_to TABULERA_FAIL_URL, allow_other_host: true
   end
 
