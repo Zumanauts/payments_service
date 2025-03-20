@@ -1,18 +1,155 @@
 class SubscriptionController < ApplicationController
 
+  STRIPE_MONTHLY_LINK = "https://buy.stripe.com/7sIdTBc4IcL9eis3cc"
+
+  ANNUAL_SUBSCRIPTION_CODE = "price_1QyTnJIX0USGAO7Lz5v69drc"
+  MONTHLY_SUBSCRIPTION_CODE = "price_1QyTm1IX0USGAO7L4HFjXLvQ"
+
   skip_before_action :verify_authenticity_token
 
-  def create
+  def create_session
+    form_params = request.query_parameters
+    is_monthly = form_params["monthly"]
 
-    puts request.query_parameters
+    product_code = is_monthly ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
-    redirect_to "https://buy.stripe.com/7sIdTBc4IcL9eis3cc?client_reference_id=#{0}", allow_other_host: true
+    #Validate params
+    company_name = form_params["Company Legal Name"]
+    instance_name = generate_portal_instance_name(company_name)
+
+    full_instance_name = instance_name
+    subscription_model = nil
+    attempts = 0
+
+
+    loop do
+      begin
+        subscription_model = Subscription.create(signup_form_data: form_params, portal_instance_name: full_instance_name)
+        break;
+      rescue ActiveRecord::RecordNotUnique
+        full_instance_name = instance_name + '-' + SecureRandom.hex(2)
+      end
+      attempts += 1
+      raise "Failed to generate uniq domain" if attempts > 10
+    end
+
+
+    session = Stripe::Checkout::Session.create({
+                                                 success_url: 'https://tabulera.com/checkout-success',
+                                                 cancel_url: 'https://tabulera.com/checkout-cancel',
+                                                 mode: 'subscription',
+                                                 line_items: [{
+                                                                  # For metered billing, do not pass quantity
+                                                                  quantity: 1,
+                                                                  price: product_code,
+                                                              }],
+                                                 metadata: {
+                                                     tabulera_subscription_id: subscription_model.reference_id
+                                                 }
+                                             })
+
+    redirect_to session.url, allow_other_host: true
   end
 
-  def confirm
+  def test_create
 
-    puts request.query_parameters
+    instance_name = generate_portal_instance_name("abc")
 
-    redirect_to "https://tabulera.com/checkout-success", allow_other_host: true
+    full_instance_name = instance_name
+    subscription_model = nil
+    attempts = 0
+
+
+    loop do
+      begin
+        subscription_model = Subscription.create(signup_form_data: {}, portal_instance_name: full_instance_name)
+        break;
+      rescue ActiveRecord::RecordNotUnique
+        full_instance_name = instance_name + '-' + SecureRandom.hex(2)
+      end
+      attempts += 1
+      raise "Failed to generate uniq domain" if attempts > 10
+    end
+
+    session = Stripe::Checkout::Session.create({
+                                                   success_url: 'https://tabulera.com/checkout-success',
+                                                   cancel_url: 'https://tabulera.com/checkout-cancel',
+                                                   mode: 'subscription',
+                                                   line_items: [{
+                                                                    # For metered billing, do not pass quantity
+                                                                    quantity: 1,
+                                                                    price: MONTHLY_SUBSCRIPTION_CODE,
+                                                                }],
+                                                   metadata: {
+                                                       tabulera_subscription_id: subscription_model.reference_id
+                                                   },
+                                                   subscription_data: {
+                                                       trial_period_days: 30
+                                                   }
+                                               })
+
+    redirect_to session.url, allow_other_host: true
+
   end
+
+
+
+
+  def customer_portal_link
+
+    # instance_name = params[:instance_name]
+    # return status 400 if instance_name.nil?
+    #
+    # subscription = Subscription.where(portal_instance_name: instance_name).first
+    # return status 400 if subscription.nil?
+    #
+    # session = Stripe::BillingPortal::Session.create(
+    #     customer: subscription.stripe_customer_id,
+    #     return_url: "https://#{subscription.portal_instance_name}.tabulera.com/"
+    # )
+    #
+    # render json: {portal_url: session.url}
+
+
+    session = Stripe::BillingPortal::Session.create(
+        customer: "cus_Rvoi8nwTu3LgEx",
+        return_url: "https://stage-sandisk.tabulera.com/"
+    )
+
+    render json: {portal_url: session.url}
+
+  end
+
+
+  def test_customer_portal_link
+
+    session = Stripe::BillingPortal::Session.create(
+        customer: "cus_Rvoi8nwTu3LgEx",
+        return_url: "https://stage-sandisk.tabulera.com/"
+    )
+
+    render json: {portal_url: session.url}
+  end
+
+
+  def sync_all
+
+  end
+
+  private
+
+  def generate_portal_instance_name company_name
+
+    company_name_normalized = company_name.gsub(/[^0-9a-z]/i, '')
+
+    company_name_components = company_name_normalized.gsub(/[[:upper:]]/, ' \0').gsub('  ', ' ').strip.split(' ')
+
+    if company_name_components.count >= 3
+      suggested_name = company_name_components.map {|c|c[0]}.join('').downcase
+    else
+      suggested_name = company_name_normalized.gsub(' ', '').downcase
+    end
+    "saas-" + suggested_name
+  end
+
 end
