@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  post 'subscription/create'
+  post 'subscription' => 'subscription#create_session'
   # get 'subscription/confirm'
   # get 'subscription/update'
   post 'webhook' => 'webhooks#process_event'
