@@ -12,34 +12,19 @@ class SubscriptionController < ApplicationController
 
   def create_session
 
-    pp params
+    f_params = form_params
+    is_monthly = f_params["monthly"]
 
-    form_params = request.query_parameters
-    is_monthly = form_params["monthly"]
+    pp form_params
 
     product_code = is_monthly ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
     #Validate params
-    company_name = form_params["Company-Legal-Name"]
+    company_name = f_params["Company-Legal-Name"]
     raise "Company name not provided" if company_name.nil?
     instance_name = generate_portal_instance_name(company_name)
 
-    full_instance_name = instance_name
-    subscription_model = nil
-    attempts = 0
-
-
-    loop do
-      begin
-        subscription_model = Subscription.create(signup_form_data: form_params, portal_instance_name: full_instance_name)
-        break;
-      rescue ActiveRecord::RecordNotUnique
-        full_instance_name = instance_name + '-' + SecureRandom.hex(2)
-      end
-      attempts += 1
-      raise "Failed to generate uniq domain" if attempts > 10
-    end
-
+    subscription_model = create_subscription f_params, instance_name
 
     session = Stripe::Checkout::Session.create({
                                                  success_url: TABULERA_SUCCESS_URL,
@@ -62,21 +47,7 @@ class SubscriptionController < ApplicationController
 
     instance_name = generate_portal_instance_name("abc")
 
-    full_instance_name = instance_name
-    subscription_model = nil
-    attempts = 0
-
-
-    loop do
-      begin
-        subscription_model = Subscription.create(signup_form_data: {}, portal_instance_name: full_instance_name)
-        break;
-      rescue ActiveRecord::RecordNotUnique
-        full_instance_name = instance_name + '-' + SecureRandom.hex(2)
-      end
-      attempts += 1
-      raise "Failed to generate uniq domain" if attempts > 10
-    end
+    subscription_model = create_subscription({}, instance_name)
 
     session = Stripe::Checkout::Session.create({
                                                    success_url: TABULERA_SUCCESS_URL,
@@ -158,6 +129,34 @@ class SubscriptionController < ApplicationController
       suggested_name = company_name_normalized.gsub(' ', '').downcase
     end
     "saas-" + suggested_name
+  end
+
+
+  def create_subscription signup_form_data, instance_name
+
+    full_instance_name = instance_name
+    subscription_model = nil
+    attempts = 0
+
+
+    loop do
+      begin
+        subscription_model = Subscription.create(signup_form_data: signup_form_data, portal_instance_name: full_instance_name)
+        break;
+      rescue ActiveRecord::RecordNotUnique
+        full_instance_name = instance_name + '-' + SecureRandom.hex(2)
+      end
+      attempts += 1
+      raise "Failed to generate uniq domain" if attempts > 10
+    end
+
+    subscription_model
+
+  end
+
+  def form_params
+    params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name", "EIN", "Company-Address",
+                  "State", "Postal-Code", "monthly").to_h
   end
 
 end
