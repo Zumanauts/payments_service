@@ -2,11 +2,12 @@ class WebhooksController < ApplicationController
   skip_before_action :verify_authenticity_token
 
 
-
   def process_event
     payload = request.body.read
     sig_header = request.env['HTTP_STRIPE_SIGNATURE']
     event = nil
+
+    pp "Processing request"
 
     begin
       event = Stripe::Webhook.construct_event(
@@ -14,13 +15,18 @@ class WebhooksController < ApplicationController
       )
     rescue JSON::ParserError => e
       # Invalid payload
+      pp "Parsing failed"
       render json: { error: { message: e.message }}, status: :bad_request
       return
     rescue Stripe::SignatureVerificationError => e
       # Invalid signature
+      pp "Sgnature failed"
       render json: { error: { message: e.message, extra: "Sig verification failed" }}, status: :bad_request
       return
     end
+
+    pp "Data extracted"
+
 
     event_type = event['type']
     data = event['data']
@@ -95,6 +101,13 @@ class WebhooksController < ApplicationController
 
     render json: { message: :success }
   end
+
+
+  rescue_from StandardError do |e|
+    puts "Error during processing: #{$!}"
+    puts "Backtrace:\n\t#{e.backtrace.join("\n\t")}"
+  end
+
 
 
   private
