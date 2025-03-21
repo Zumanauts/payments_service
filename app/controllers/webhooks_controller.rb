@@ -31,6 +31,10 @@ class WebhooksController < ApplicationController
 
     case event_type
     when 'checkout.session.completed'
+
+      puts "--------------------","Checkout completed"
+
+
       # Payment is successful and the subscription is created.
       # You should provision the subscription and save the customer ID to your database.
 
@@ -53,6 +57,7 @@ class WebhooksController < ApplicationController
       subscription_model.update(stripe_subscription_id: stripe_subscription_id, stripe_customer_id: stripe_customer_id)
       # SubscriptionStatus.create(subscription: subscription_model, stripe_event: se, status: 'trial',
       #                           period_start: period_start, period_end: period_end)
+      puts "--------------------","Starting the server"
 
       tabuleraAdminService = TabuleraAdminService.from_config
       tabuleraAdminService.create_portal_instance instance_name, subscription_model.signup_form_data

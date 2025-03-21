@@ -34,6 +34,9 @@ class TabuleraAdminService
 
     raise "Failed to create new server" if res.code != '200'
 
+    puts "Requested server start, response code: #{res.code}"
+
+
     res
 
   end
@@ -66,6 +69,7 @@ class TabuleraAdminService
     json = JSON.parse(res.body)
 
     @auth_token = json['token']
+    puts "Auth token received: #{@auth_token[0..3]}..."
 
   end
 
