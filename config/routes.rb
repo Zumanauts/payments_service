@@ -2,7 +2,10 @@ Rails.application.routes.draw do
   post 'subscription' => 'subscription#create_session'
   # get 'subscription/confirm'
   # get 'subscription/update'
-  post 'webhook' => 'webhooks#process_event'
+
+  constraints format: :json do
+    post 'webhook' => 'webhooks#process_event'
+  end
 
   get 'subscription/test_create'
 

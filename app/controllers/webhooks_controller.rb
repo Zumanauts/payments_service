@@ -7,8 +7,6 @@ class WebhooksController < ApplicationController
     sig_header = request.env['HTTP_STRIPE_SIGNATURE']
     event = nil
 
-    pp "Processing request"
-
     begin
       event = Stripe::Webhook.construct_event(
           payload, sig_header, "whsec_216a164ee9794189c2f8546f7deb6e8caaa198796708fb054655aa9e0b29d1ce"
@@ -20,7 +18,7 @@ class WebhooksController < ApplicationController
       return
     rescue Stripe::SignatureVerificationError => e
       # Invalid signature
-      pp "Sgnature failed"
+      pp "Sgnature failed", e.message
       render json: { error: { message: e.message, extra: "Sig verification failed" }}, status: :bad_request
       return
     end
