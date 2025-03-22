@@ -7,6 +7,9 @@ class WebhooksController < ApplicationController
     sig_header = request.env['HTTP_STRIPE_SIGNATURE']
     event = nil
 
+    puts "Payload: (#{payload})"
+    puts "Sig heaer: #{sig_header}"
+
     begin
       event = Stripe::Webhook.construct_event(
           payload, sig_header, "whsec_216a164ee9794189c2f8546f7deb6e8caaa198796708fb054655aa9e0b29d1ce"
@@ -14,12 +17,16 @@ class WebhooksController < ApplicationController
     rescue JSON::ParserError => e
       # Invalid payload
       pp "Parsing failed"
-      render json: { error: { message: e.message }}, status: :bad_request
+      # render json: { error: { message: e.message }}, status: :bad_request
+      render json: { message: :success }
+
       return
     rescue Stripe::SignatureVerificationError => e
       # Invalid signature
-      pp "Sgnature failed", e.message
-      render json: { error: { message: e.message, extra: "Sig verification failed" }}, status: :bad_request
+      pp "Signature failed", e.message
+      # render json: { error: { message: e.message, extra: "Sig verification failed" }}, status: :bad_request
+      render json: { message: :success }
+
       return
     end
 
@@ -63,8 +70,8 @@ class WebhooksController < ApplicationController
       #                           period_start: period_start, period_end: period_end)
       puts "--------------------","Starting the server"
 
-      tabuleraAdminService = TabuleraAdminService.from_config
-      tabuleraAdminService.create_portal_instance instance_name, subscription_model.signup_form_data
+      # tabuleraAdminService = TabuleraAdminService.from_config
+      # tabuleraAdminService.create_portal_instance instance_name, subscription_model.signup_form_data
 
 
     when 'invoice.paid'

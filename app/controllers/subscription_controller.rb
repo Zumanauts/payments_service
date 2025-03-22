@@ -13,7 +13,7 @@ class SubscriptionController < ApplicationController
   def create_session
 
     f_params = form_params
-    is_monthly = f_params["monthly"]
+    is_monthly = f_params["billing"] != "annual"
 
     pp form_params
 
@@ -156,7 +156,7 @@ class SubscriptionController < ApplicationController
 
   def form_params
     params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name", "EIN", "Company-Address",
-                  "State", "Postal-Code", "monthly").to_h
+                  "State", "Postal-Code", "billing").to_h
   end
 
 end
