@@ -45,7 +45,8 @@ class WebhooksController < ApplicationController
       # Payment is successful and the subscription is created.
       # You should provision the subscription and save the customer ID to your database.
 
-      ref_id = data_object.dig('metadata', 'tabulera_subscription_id')
+      event_meta_data = data_object['metadata'] || {}
+      ref_id = event_meta_data['tabulera_subscription_id']
       raise "Tabulera Ref Id not found" if ref_id.nil?
 
       stripe_subscription_id = data_object['subscription']
@@ -54,8 +55,8 @@ class WebhooksController < ApplicationController
       stripe_customer_id = data_object['customer']
       # raise "Customer Id not found" if stripe_customer_id.nil?
 
-      period_start = Time.at(data_object['period_start'])&.to_date
-      period_end = Time.at(data_object['period_end'])&.to_date
+      # period_start = Time.at(data_object['period_start'])&.to_date
+      # period_end = Time.at(data_object['period_end'])&.to_date
 
 
       subscription_model = Subscription.find_by_reference_id(ref_id)
@@ -66,8 +67,8 @@ class WebhooksController < ApplicationController
       #                           period_start: period_start, period_end: period_end)
       puts "--------------------","Starting the server"
 
-      # tabuleraAdminService = TabuleraAdminService.from_config
-      # tabuleraAdminService.create_portal_instance instance_name, subscription_model.signup_form_data
+      tabuleraAdminService = TabuleraAdminService.from_config
+      tabuleraAdminService.create_portal_instance instance_name, subscription_model.signup_form_data
 
 
     when 'invoice.paid'
