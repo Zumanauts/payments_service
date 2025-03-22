@@ -10,7 +10,7 @@ class Subscription < ApplicationRecord
     id + CLIENT_REF_ID_SEQ_START
   end
 
-  def find_by_reference_id(ref_id)
+  def self.find_by_reference_id(ref_id)
     find(ref_id - CLIENT_REF_ID_SEQ_START)
   end
 
