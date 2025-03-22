@@ -68,7 +68,7 @@ class WebhooksController < ApplicationController
       puts "--------------------","Starting the server"
 
       tabuleraAdminService = TabuleraAdminService.from_config
-      tabuleraAdminService.create_portal_instance instance_name, subscription_model.signup_form_data
+      tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name, subscription_model.signup_form_data
 
 
     when 'invoice.paid'
