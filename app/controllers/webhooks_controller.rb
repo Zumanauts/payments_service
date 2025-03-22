@@ -12,21 +12,17 @@ class WebhooksController < ApplicationController
 
     begin
       event = Stripe::Webhook.construct_event(
-          payload, sig_header, "whsec_216a164ee9794189c2f8546f7deb6e8caaa198796708fb054655aa9e0b29d1ce"
+          payload, sig_header, "whsec_LXm3afVnyf2EVxxvcYQUWbW9sW9wKeUp"
       )
     rescue JSON::ParserError => e
       # Invalid payload
       pp "Parsing failed"
-      # render json: { error: { message: e.message }}, status: :bad_request
-      render json: { message: :success }
-
+      render json: { error: { message: e.message }}, status: :bad_request
       return
     rescue Stripe::SignatureVerificationError => e
       # Invalid signature
       pp "Signature failed", e.message
-      # render json: { error: { message: e.message, extra: "Sig verification failed" }}, status: :bad_request
-      render json: { message: :success }
-
+      render json: { error: { message: e.message, extra: "Sig verification failed" }}, status: :bad_request
       return
     end
 
