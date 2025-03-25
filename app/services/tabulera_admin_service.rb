@@ -24,7 +24,7 @@ class TabuleraAdminService
 
     payload =  {
         'name': server_name,
-        'env': 'Prod',
+        'env': 'Stage',
         'mode': {
             'SelfSet': params
         }
