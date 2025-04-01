@@ -14,6 +14,8 @@ class SubscriptionController < ApplicationController
 
     f_params = form_params
 
+    #Validate params
+    transform_params f_params
 
     is_monthly = f_params["Selected Plan"]&.split(' ')&.last != "annual"
 
@@ -21,9 +23,9 @@ class SubscriptionController < ApplicationController
 
     product_code = is_monthly ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
-    #Validate params
     company_name = f_params["Company-Legal-Name"]
     raise "Company name not provided" if company_name.nil?
+
     instance_name = generate_portal_instance_name(company_name)
 
     subscription_model = create_subscription f_params, instance_name
@@ -118,6 +120,22 @@ class SubscriptionController < ApplicationController
   end
 
   private
+
+  def transform_params form
+
+    raise "Missing email" if form["Email"].nil?
+    form["Email"] = form["Email"].downcase
+
+    raise "Emails do not match" if form["Email"] != form["Confirm-Email"]
+    form["Confirm-Email"] = form["Confirm-Email"].downcase
+
+    address = [form.delete("Company-Address-1").presence,
+               form.delete("Company-Address-2").presence]
+
+    form["Company-Address"] = address.compact.join(", ")
+
+    #Add more validation logic here
+  end
 
   def generate_portal_instance_name company_name
 
