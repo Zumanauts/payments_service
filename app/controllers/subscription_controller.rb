@@ -125,9 +125,9 @@ class SubscriptionController < ApplicationController
 
     raise "Missing email" if form["Email"].nil?
     form["Email"] = form["Email"].downcase
+    form["Confirm-Email"] = form["Confirm-Email"].downcase
 
     raise "Emails do not match" if form["Email"] != form["Confirm-Email"]
-    form["Confirm-Email"] = form["Confirm-Email"].downcase
 
     address = [form.delete("Company-Address-1").presence,
                form.delete("Company-Address-2").presence]
