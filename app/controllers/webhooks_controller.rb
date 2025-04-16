@@ -7,12 +7,12 @@ class WebhooksController < ApplicationController
     sig_header = request.env['HTTP_STRIPE_SIGNATURE']
     event = nil
 
-    puts "Payload: (#{payload})"
-    puts "Sig heaer: #{sig_header}"
-
     begin
+
+      secret = ENV['STRIPE_SECRET'] || 'whsec_216a164ee9794189c2f8546f7deb6e8caaa198796708fb054655aa9e0b29d1ce'
+
       event = Stripe::Webhook.construct_event(
-          payload, sig_header, "whsec_LXm3afVnyf2EVxxvcYQUWbW9sW9wKeUp"
+          payload, sig_header, secret
       )
     rescue JSON::ParserError => e
       # Invalid payload
@@ -68,7 +68,8 @@ class WebhooksController < ApplicationController
       puts "--------------------","Starting the server"
 
       tabuleraAdminService = TabuleraAdminService.from_config
-      tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name, subscription_model.signup_form_data
+      tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name,
+                                                  ubscription_model.signup_form_data, subscription_model.production_mode
 
 
     when 'invoice.paid'

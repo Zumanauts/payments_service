@@ -1,34 +1,25 @@
 class SubscriptionController < ApplicationController
 
-  STRIPE_MONTHLY_LINK = "https://buy.stripe.com/7sIdTBc4IcL9eis3cc"
-
-  ANNUAL_SUBSCRIPTION_CODE = "price_1QyTnJIX0USGAO7Lz5v69drc"
-  MONTHLY_SUBSCRIPTION_CODE = "price_1QyTm1IX0USGAO7L4HFjXLvQ"
+  ANNUAL_SUBSCRIPTION_CODE = ENV["ANNUAL_SUBSCRIPTION_CODE"] || "price_1QyTnJIX0USGAO7Lz5v69drc"
+  MONTHLY_SUBSCRIPTION_CODE = ENV["MONTHLY_SUBSCRIPTION_CODE"] || "price_1QyTm1IX0USGAO7L4HFjXLvQ"
 
   TABULERA_SUCCESS_URL = "https://tabulera.com/checkout-success"
   TABULERA_FAIL_URL = "https://tabulera.com/checkout-cancel"
 
+  PRODUCTION_MODE = !!ENV["PRODUCTION_MODE"]
+
   skip_before_action :verify_authenticity_token
+
 
   def create_session
 
-    f_params = form_params
+    signup_form = form_params
 
-    #Validate params
-    transform_params f_params
+    product_code = is_monthly_param ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
-    is_monthly = f_params["Selected Plan"]&.split(' ')&.last != "annual"
+    instance_name = SubscriptionService.generate_portal_instance_name(company_name_param, PRODUCTION_MODE)
 
-    pp form_params
-
-    product_code = is_monthly ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
-
-    company_name = f_params["Company-Legal-Name"]
-    raise "Company name not provided" if company_name.nil?
-
-    instance_name = generate_portal_instance_name(company_name)
-
-    subscription_model = create_subscription f_params, instance_name
+    subscription_model = SubscriptionService.create_subscription(signup_form, instance_name, PRODUCTION_MODE)
 
     session = Stripe::Checkout::Session.create({
                                                  success_url: TABULERA_SUCCESS_URL,
@@ -47,30 +38,20 @@ class SubscriptionController < ApplicationController
     redirect_to session.url, allow_other_host: true
   end
 
-  def test_create
 
-    instance_name = generate_portal_instance_name("abc")
 
-    subscription_model = create_subscription({}, instance_name)
+  def create_server
 
-    session = Stripe::Checkout::Session.create({
-                                                   success_url: TABULERA_SUCCESS_URL,
-                                                   cancel_url: TABULERA_FAIL_URL,
-                                                   mode: 'subscription',
-                                                   line_items: [{
-                                                                    # For metered billing, do not pass quantity
-                                                                    quantity: 1,
-                                                                    price: MONTHLY_SUBSCRIPTION_CODE,
-                                                                }],
-                                                   metadata: {
-                                                       tabulera_subscription_id: subscription_model.reference_id
-                                                   },
-                                                   subscription_data: {
-                                                       trial_period_days: 30
-                                                   }
-                                               })
+    singup_form = form_params
 
-    redirect_to session.url, allow_other_host: true
+    instance_name = SubscriptionService.generate_portal_instance_name(company_name_param, is_prod_param)
+
+    subscription_model = SubscriptionService.create_subscription(signup_form, instance_name, is_prod_param)
+
+    tabuleraAdminService = TabuleraAdminService.from_config
+    tabuleraAdminService.create_portal_instance instance_name, singup_form, is_prod_param
+
+    redirect_to TABULERA_SUCCESS_URL, allow_other_host: true
 
   end
 
@@ -78,23 +59,17 @@ class SubscriptionController < ApplicationController
 
   def customer_portal_link
 
-    # instance_name = params[:instance_name]
-    # return status 400 if instance_name.nil?
-    #
-    # subscription = Subscription.where(portal_instance_name: instance_name).first
-    # return status 400 if subscription.nil?
-    #
-    # session = Stripe::BillingPortal::Session.create(
-    #     customer: subscription.stripe_customer_id,
-    #     return_url: "https://#{subscription.portal_instance_name}.tabulera.com/"
-    # )
-    #
-    # render json: {portal_url: session.url}
+    instance_name = params[:instance_name]
+    return status 400 if instance_name.nil?
 
+    subscription = Subscription.where(portal_instance_name: instance_name).first
+    return status 400 if subscription.nil?
+
+    portal_host = SubscriptionService.portal_host subscription.portal_instance_name, subscription.production_mode
 
     session = Stripe::BillingPortal::Session.create(
-        customer: "cus_Rvoi8nwTu3LgEx",
-        return_url: "https://stage-sandisk.tabulera.com/"
+        customer: subscription.stripe_customer_id,
+        return_url: "https://#{portal_host}/"
     )
 
     render json: {portal_url: session.url}
@@ -121,6 +96,23 @@ class SubscriptionController < ApplicationController
 
   private
 
+  def is_monthly_param
+    @is_monthly ||= signup_form["Selected Plan"]&.split(' ')&.last != "annual"
+  end
+
+
+  def company_name_param
+    @company_name ||= params["Company-Legal-Name"]
+    raise "Company name not provided" if @company_name.nil?
+    @company_name
+  end
+
+
+  def is_prod_param
+    @is_stage ||= (params["prod"] == "true")
+  end
+
+
   def transform_params form
 
     raise "Missing email" if form["Email"].nil?
@@ -137,46 +129,17 @@ class SubscriptionController < ApplicationController
     #Add more validation logic here
   end
 
-  def generate_portal_instance_name company_name
-
-    company_name_normalized = company_name.gsub(/[^0-9a-z]/i, '')
-
-    company_name_components = company_name_normalized.gsub(/[[:upper:]]/, ' \0').gsub('  ', ' ').strip.split(' ')
-
-    if company_name_components.count >= 3
-      suggested_name = company_name_components.map {|c|c[0]}.join('').downcase
-    else
-      suggested_name = company_name_normalized.gsub(' ', '').downcase
-    end
-    "saas-" + suggested_name
-  end
-
-
-  def create_subscription signup_form_data, instance_name
-
-    full_instance_name = instance_name
-    subscription_model = nil
-    attempts = 0
-
-
-    loop do
-      begin
-        subscription_model = Subscription.create(signup_form_data: signup_form_data, portal_instance_name: full_instance_name)
-        break;
-      rescue ActiveRecord::RecordNotUnique
-        full_instance_name = instance_name + '-' + SecureRandom.hex(2)
-      end
-      attempts += 1
-      raise "Failed to generate uniq domain" if attempts > 10
-    end
-
-    subscription_model
-
-  end
 
   def form_params
-    params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name", "EIN", "Company-Address",
-                  "State", "Postal-Code", "Selected Plan").to_h
+    signup_form = params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name",
+                                "EIN", "Company-Address-1", "Company-Address-2", "City","State", "Postal-Code",
+                                "Selected Plan").to_h
+
+    pp signup_form
+
+    transform_params signup_form
+
+    signup_form
   end
 
 end

@@ -12,19 +12,22 @@ class TabuleraAdminService
 
 
   def self.from_config
-    TabuleraAdminService.new('payments_service', '0e5d7238503206d9cb61975b2df23e95b99de842be5f1497330ed529f68dd24e')
+    user_name = ENV['ADMIN_SERVICE_USER'] || 'payments_service'
+    user_pwd = ENV['ADMIN_SERVICE_PASSWORD'] || '0e5d7238503206d9cb61975b2df23e95b99de842be5f1497330ed529f68dd24e'
+
+    TabuleraAdminService.new(user_name, user_pwd)
   end
 
 
-  # r = t.create_portal_instance 'test', {'First Name':'Doug','Last Name':'Devlin','Email':'andrey.brych@tabulera.com','Confirm Email':'andrey.brych@tabulera.com','Company Legal Name':'Tabulera','EIN':'123456','Company Address':'6200 Stoneridge Mall Rd.','State':'California','Postal Code':'94588'}
-
-  def create_portal_instance server_name, params
+  def create_portal_instance server_name, params, production_mode
 
     create_url = build_url ADMIN_SERVICE_CREATE_PATH
 
+    env = production_mode ?  "Prod" : "Stage"
+
     payload =  {
         'name': server_name,
-        'env': 'Stage',
+        'env': env,
         'mode': {
             'SelfSet': params
         }
