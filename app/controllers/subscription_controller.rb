@@ -17,9 +17,7 @@ class SubscriptionController < ApplicationController
 
     product_code = is_monthly_param ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
-    instance_name = SubscriptionService.generate_portal_instance_name(company_name_param, PRODUCTION_MODE)
-
-    subscription_model = SubscriptionService.create_subscription(signup_form, instance_name, PRODUCTION_MODE)
+    subscription_model = SubscriptionService.create_subscription(signup_form, company_name_param, PRODUCTION_MODE)
 
     session = Stripe::Checkout::Session.create({
                                                  success_url: TABULERA_SUCCESS_URL,
@@ -42,14 +40,12 @@ class SubscriptionController < ApplicationController
 
   def create_server
 
-    singup_form = form_params
+    signup_form = form_params
 
-    instance_name = SubscriptionService.generate_portal_instance_name(company_name_param, is_prod_param)
-
-    subscription_model = SubscriptionService.create_subscription(signup_form, instance_name, is_prod_param)
+    subscription_model = SubscriptionService.create_subscription(signup_form, company_name_param, is_prod_param)
 
     tabuleraAdminService = TabuleraAdminService.from_config
-    tabuleraAdminService.create_portal_instance instance_name, singup_form, is_prod_param
+    tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name, signup_form, is_prod_param
 
     redirect_to TABULERA_SUCCESS_URL, allow_other_host: true
 
