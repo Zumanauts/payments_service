@@ -12,7 +12,7 @@ class WebhooksController < ApplicationController
       secret = ENV['STRIPE_SECRET'] || 'whsec_216a164ee9794189c2f8546f7deb6e8caaa198796708fb054655aa9e0b29d1ce'
 
       event = Stripe::Webhook.construct_event(
-          payload, sig_header, secret
+          payload, sig_header, 'whsec_216a164ee9794189c2f8546f7deb6e8caaa198796708fb054655aa9e0b29d1ce'
       )
     rescue JSON::ParserError => e
       # Invalid payload

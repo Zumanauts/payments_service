@@ -4,7 +4,7 @@ class SubscriptionController < ApplicationController
   MONTHLY_SUBSCRIPTION_CODE = ENV["MONTHLY_SUBSCRIPTION_CODE"]
 
   TABULERA_SUCCESS_URL = "https://tabulera.com/checkout-success"
-  TABULERA_FAIL_URL = "https://tabulera.com/checkout-cancel"
+  TABULERA_FAIL_URL = "https://tabulera.com/checkout-fail"
 
   PRODUCTION_MODE = !!ENV["PRODUCTION_MODE"]
 
@@ -81,7 +81,7 @@ class SubscriptionController < ApplicationController
 
     session = Stripe::BillingPortal::Session.create(
         customer: "cus_Rvoi8nwTu3LgEx",
-        return_url: "https://stage-sandisk.tabulera.com/"
+        return_url: "https://demo1.tabulera.com/"
     )
 
     render json: {portal_url: session.url}
