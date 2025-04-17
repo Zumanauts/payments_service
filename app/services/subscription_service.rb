@@ -24,11 +24,8 @@ class SubscriptionService
         address = dns_resolve_host full_suggested_name, production_mode
         puts "Server name '#{full_suggested_name}' in use at #{address}"
 
-        full_suggested_name = suggested_name + '-' + (server_name_suffixes[attempts] || SecureRandom.hex(2))
-
       rescue Resolv::ResolvError
-        puts "#{full_suggested_name} !"
-
+        puts "Unused name #{full_suggested_name} !"
         begin
           #Name found
           subscription_model = Subscription.create(signup_form_data: signup_form_data,
@@ -36,13 +33,14 @@ class SubscriptionService
           break;
         rescue ActiveRecord::RecordNotUnique
         end
-
       end
+
+      full_suggested_name = suggested_name + '-' + (server_name_suffixes[attempts] || SecureRandom.hex(2))
+
       attempts += 1
       raise "Failed to generate uniq domain" if attempts > 10
     end
-
-
+    
     subscription_model
   end
 
