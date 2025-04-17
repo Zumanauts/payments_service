@@ -45,12 +45,14 @@ class SubscriptionService
 
     loop do
       begin
-        dns_resolve_host full_suggested_name, production_mode
-        break;
-      rescue => e
-        puts "Exception: #{e}"
-        pp e
+        address = dns_resolve_host full_suggested_name, production_mode
+        puts "Found server #{full_suggested_name} at #{address}"
+
         full_suggested_name = suggested_name + '-' + (server_name_suffixes[attempts] || SecureRandom.hex(2))
+
+      rescue Resolv::ResolvError
+        puts "#{full_suggested_name} unused!"
+        break;
       end
       attempts += 1
       raise "Failed to generate uniq domain" if attempts > 10
