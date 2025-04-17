@@ -1,7 +1,7 @@
 class SubscriptionController < ApplicationController
 
-  ANNUAL_SUBSCRIPTION_CODE = ENV["ANNUAL_SUBSCRIPTION_CODE"] || "price_1QyTnJIX0USGAO7Lz5v69drc"
-  MONTHLY_SUBSCRIPTION_CODE = ENV["MONTHLY_SUBSCRIPTION_CODE"] || "price_1QyTm1IX0USGAO7L4HFjXLvQ"
+  ANNUAL_SUBSCRIPTION_CODE = ENV["ANNUAL_SUBSCRIPTION_CODE"]
+  MONTHLY_SUBSCRIPTION_CODE = ENV["MONTHLY_SUBSCRIPTION_CODE"]
 
   TABULERA_SUCCESS_URL = "https://tabulera.com/checkout-success"
   TABULERA_FAIL_URL = "https://tabulera.com/checkout-cancel"
@@ -97,7 +97,7 @@ class SubscriptionController < ApplicationController
   private
 
   def is_monthly_param
-    @is_monthly ||= signup_form["Selected Plan"]&.split(' ')&.last != "annual"
+    @is_monthly ||= params["Selected Plan"]&.split(' ')&.last != "annual"
   end
 
 

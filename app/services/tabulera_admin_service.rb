@@ -1,6 +1,6 @@
 class TabuleraAdminService
 
-  ADMIN_SERVICE_HOST        = ENV['ADMIN_SERVICE_HOST'] || 'http://admin.prod'
+  ADMIN_SERVICE_HOST        = ENV['ADMIN_SERVICE_HOST']
   ADMIN_SERVICE_LOGIN_PATH  = '/api/auth/login'
   ADMIN_SERVICE_PING_PATH   = '/api/ping'
   ADMIN_SERVICE_CREATE_PATH = '/api/client_create'
@@ -12,8 +12,8 @@ class TabuleraAdminService
 
 
   def self.from_config
-    user_name = ENV['ADMIN_SERVICE_USER'] || 'payments_service'
-    user_pwd = ENV['ADMIN_SERVICE_PASSWORD'] || '0e5d7238503206d9cb61975b2df23e95b99de842be5f1497330ed529f68dd24e'
+    user_name = ENV['ADMIN_SERVICE_USER']
+    user_pwd = ENV['ADMIN_SERVICE_PASSWORD']
 
     TabuleraAdminService.new(user_name, user_pwd)
   end
