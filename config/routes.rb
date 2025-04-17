@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
   post 'subscription' => 'subscription#create_session'
+  post 'subscription/create_server'
+
   # get 'subscription/confirm'
   # get 'subscription/update'
 
@@ -7,7 +9,6 @@ Rails.application.routes.draw do
     post 'webhook' => 'webhooks#process_event'
   end
 
-  get 'subscription/test_create'
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
