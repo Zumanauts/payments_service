@@ -47,7 +47,8 @@ class SubscriptionService
       begin
         dns_resolve_host full_suggested_name, production_mode
         break;
-      rescue ActiveRecord::RecordNotUnique
+      rescue => e
+        puts "Exception: #{e}", pp e
         full_suggested_name = suggested_name + '-' + (server_name_suffixes[attempts] || SecureRandom.hex(2))
       end
       attempts += 1
