@@ -121,11 +121,6 @@ class SubscriptionController < ApplicationController
 
     raise "Emails do not match" if form["Email"] != form["Confirm-Email"]
 
-    address = [form.delete("Company-Address-1").presence,
-               form.delete("Company-Address-2").presence]
-
-    form["Company-Address"] = address.compact.join(", ")
-
     #Add more validation logic here
   end
 

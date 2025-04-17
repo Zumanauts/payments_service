@@ -1,6 +1,6 @@
 class TabuleraAdminService
 
-  ADMIN_SERVICE_HOST        = 'http://admin.prod'
+  ADMIN_SERVICE_HOST        = ENV['ADMIN_SERVICE_HOST'] || 'http://admin.prod'
   ADMIN_SERVICE_LOGIN_PATH  = '/api/auth/login'
   ADMIN_SERVICE_PING_PATH   = '/api/ping'
   ADMIN_SERVICE_CREATE_PATH = '/api/client_create'
