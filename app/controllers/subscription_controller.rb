@@ -63,7 +63,7 @@ class SubscriptionController < ApplicationController
 
   def customer_portal_link
 
-    instance_name = params[:instance_name]
+    instance_name = params[:namespace]
     return head(:bad_request) if instance_name.nil?
 
     subscription = Subscription.where(portal_instance_name: instance_name).first
