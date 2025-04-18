@@ -9,10 +9,10 @@ class WebhooksController < ApplicationController
 
     begin
 
-      secret = ENV['STRIPE_SECRET']
+      secret = 'whsec_LXm3afVnyf2EVxxvcYQUWbW9sW9wKeUp' || ENV['STRIPE_SECRET']
 
       event = Stripe::Webhook.construct_event(
-          payload, sig_header, 'whsec_LXm3afVnyf2EVxxvcYQUWbW9sW9wKeUp'
+          payload, sig_header, secret
       )
     rescue JSON::ParserError => e
       # Invalid payload
@@ -60,30 +60,12 @@ class WebhooksController < ApplicationController
       #                           period_start: period_start, period_end: period_end)
       puts "--------------------","Starting the server"
 
-      # tabuleraAdminService = TabuleraAdminService.from_config
-      # tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name,
-      #                                             scription_model.signup_form_data, subscription_model.production_mode
+      tabuleraAdminService = TabuleraAdminService.from_config
+      tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name,
+                                                  scription_model.signup_form_data, subscription_model.production_mode
 
 
-    when 'invoice.paid'
-      # Continue to provision the subscription as payments continue to be made.
-      # Store the status in your database and check when a user accesses your service.
-      # This approach helps you avoid hitting rate limits.
-
-      stripe_subscription_id = data_object['subscription']
-      period = data_object.dig('lines', 'data', '0', 'period')
-      period_start = Time.at(period['start']).to_date unless period.nil?
-      period_end = Time.at(period['end']).to_date unless period.nil?
-
-      SubscriptionStatus.create(stripe_subscription_id: stripe_subscription_id, status: 'active', stripe_event: se,
-                                period_start: period_start, period_end: period_end)
-
-
-    when 'invoice.payment_failed'
-      # The payment failed or the customer does not have a valid payment method.
-      # The subscription becomes past_due. Notify your customer and send them to the
-      # customer portal to update their payment information.
-    when 'customer.subscription.updated'
+    when 'customer.subscription.updated', 'customer.subscription.created', 'customer.subscription.deleted'
 
       stripe_subscription_id = data_object['id']
       period_start = Time.at(data_object['current_period_start']).to_date
@@ -92,6 +74,10 @@ class WebhooksController < ApplicationController
 
       SubscriptionStatus.create(stripe_subscription_id: stripe_subscription_id, status: status, stripe_event: se,
                                 period_start: period_start, period_end: period_end)
+
+    when 'customer.subscription.trial_will_end'
+
+      #notify user
 
     else
       puts "Unhandled event type: #{event.type}"
