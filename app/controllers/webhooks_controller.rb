@@ -62,7 +62,7 @@ class WebhooksController < ApplicationController
 
       tabuleraAdminService = TabuleraAdminService.from_config
       tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name,
-                                                  scription_model.signup_form_data, subscription_model.production_mode
+                                                  subscription_model.signup_form_data, subscription_model.production_mode
 
 
     when 'customer.subscription.updated', 'customer.subscription.created', 'customer.subscription.deleted'
@@ -73,7 +73,7 @@ class WebhooksController < ApplicationController
       status = data_object['status']
 
       SubscriptionStatus.create(stripe_subscription_id: stripe_subscription_id, status: status, stripe_event: se,
-                                period_start: period_start, period_end: period_end)
+                                current_period_start_date: period_start, current_period_end_date: period_end)
 
     when 'customer.subscription.trial_will_end'
 

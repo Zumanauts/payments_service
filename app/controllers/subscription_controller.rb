@@ -21,7 +21,7 @@ class SubscriptionController < ApplicationController
 
     subscription_model = SubscriptionService.create_subscription(signup_form, company_name_param, PRODUCTION_MODE)
 
-    cancel_url = TABULERA_CANCEL_URL + (params["Selected Plan"] || "")
+    cancel_url = TABULERA_CANCEL_URL + cancel_params
 
     session = Stripe::Checkout::Session.create({
                                                  success_url: TABULERA_SUCCESS_URL,
@@ -138,6 +138,15 @@ class SubscriptionController < ApplicationController
     transform_params signup_form
 
     signup_form
+  end
+
+  def cancel_params
+
+    row_params = params["Selected Plan"] || ""
+
+    row_params.downcase.split(",").map do |param|
+      param.split(":").map{|keyVal| keyVal.strip}.join("=")
+    end.join("&")
   end
 
 end
