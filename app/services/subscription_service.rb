@@ -51,11 +51,11 @@ class SubscriptionService
     begin
       host = portal_host(portal_name, production_mode)
       address = Resolv.getaddress host
-      puts "Server name '#{full_suggested_name}' in use at #{address}"
+      puts "Server name '#{portal_name}' in use at #{address}"
 
       false
     rescue Resolv::ResolvError
-      puts "Unused name #{full_suggested_name} !"
+      puts "Found unused name #{portal_name} !"
       true
     end
   end
