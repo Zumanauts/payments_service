@@ -4,7 +4,9 @@ class SubscriptionController < ApplicationController
   MONTHLY_SUBSCRIPTION_CODE = ENV["MONTHLY_SUBSCRIPTION_CODE"]
 
   TABULERA_SUCCESS_URL = "https://tabulera.com/checkout-success"
+  TABULERA_CANCEL_URL = "https://tabulera.com/checkout-account-details?"
   TABULERA_FAIL_URL = "https://tabulera.com/checkout-fail"
+
 
   PRODUCTION_MODE = !!ENV["PRODUCTION_MODE"]
 
@@ -19,15 +21,18 @@ class SubscriptionController < ApplicationController
 
     subscription_model = SubscriptionService.create_subscription(signup_form, company_name_param, PRODUCTION_MODE)
 
+    cancel_url = TABULERA_CANCEL_URL + (params["Selected Plan"] || "")
+
     session = Stripe::Checkout::Session.create({
                                                  success_url: TABULERA_SUCCESS_URL,
-                                                 cancel_url: TABULERA_FAIL_URL,
+                                                 cancel_url: cancel_url,
                                                  mode: 'subscription',
                                                  line_items: [{
                                                                   # For metered billing, do not pass quantity
                                                                   quantity: 1,
                                                                   price: product_code,
                                                               }],
+                                                 trial_period_days: 30, #Tmp
                                                  metadata: {
                                                      tabulera_subscription_id: subscription_model.reference_id
                                                  }
