@@ -32,7 +32,9 @@ class SubscriptionController < ApplicationController
                                                                   quantity: 1,
                                                                   price: product_code,
                                                               }],
-                                                 trial_period_days: 30, #Tmp
+                                                 subscription_data: {
+                                                  trial_period_days: 30 #Tmp
+                                                 },
                                                  metadata: {
                                                      tabulera_subscription_id: subscription_model.reference_id
                                                  }
