@@ -4,7 +4,7 @@ class CreateSubscriptionRequests < ActiveRecord::Migration[7.1]
 
       t.json :signup_form_data
       t.string :reference_id
-      t.boolean :production_mode, :boolean, default: false
+      t.boolean :production_mode, default: false
 
       t.timestamps
 
