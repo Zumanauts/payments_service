@@ -64,11 +64,13 @@ class WebhooksController < ApplicationController
       subscription_model = SubscriptionService.create_subscription(subscription_params, subscription_request.company_name,
                                                                    subscription_request.production_mode)
 
-      puts "--------------------","Starting the server"
+      puts "Starting the server"
 
       tabuleraAdminService = TabuleraAdminService.from_config
       tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name,
                                                   subscription_request.signup_form_data, subscription_request.production_mode
+
+      puts "All done"
 
     when 'customer.subscription.updated', 'customer.subscription.created', 'customer.subscription.deleted'
 

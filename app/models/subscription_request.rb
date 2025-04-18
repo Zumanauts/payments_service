@@ -1,11 +1,11 @@
 class SubscriptionRequest < ApplicationRecord
 
   has_one :subscription
-  before_create :create_ref_id
   before_create :validate_form
+  after_create :create_ref_id
 
   def create_ref_id
-    self.reference_id = SecureRandom.hex(4)+id.to_s
+    self.update_attribute(:reference_id, SecureRandom.hex(4)+id.to_s)
   end
 
 
