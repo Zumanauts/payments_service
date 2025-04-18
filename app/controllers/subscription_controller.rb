@@ -19,7 +19,7 @@ class SubscriptionController < ApplicationController
 
     product_code = is_monthly_param ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
-    subscription_model = SubscriptionService.create_subscription(signup_form, company_name_param, PRODUCTION_MODE)
+    subscription_request = SubscriptionRequest(signup_form_data: signup_form, production_mode: PRODUCTION_MODE)
 
     cancel_url = TABULERA_CANCEL_URL + cancel_params
 
@@ -36,7 +36,7 @@ class SubscriptionController < ApplicationController
                                                   trial_period_days: 30 #Tmp
                                                  },
                                                  metadata: {
-                                                     tabulera_subscription_id: subscription_model.reference_id
+                                                     tabulera_subscription_id: subscription_request.reference_id
                                                  }
                                              })
 
@@ -49,7 +49,8 @@ class SubscriptionController < ApplicationController
 
     signup_form = form_params
 
-    subscription_model = SubscriptionService.create_subscription(signup_form, company_name_param, is_prod_param)
+    subscription_request = SubscriptionRequest(signup_form_data: signup_form, production_mode: is_prod_param)
+    subscription_model = SubscriptionService.create_subscription({}, subscription_request.company_name, is_prod_param)
 
     tabuleraAdminService = TabuleraAdminService.from_config
     tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name, signup_form, is_prod_param
@@ -63,10 +64,10 @@ class SubscriptionController < ApplicationController
   def customer_portal_link
 
     instance_name = params[:instance_name]
-    return status 400 if instance_name.nil?
+    return head(:bad_request) if instance_name.nil?
 
     subscription = Subscription.where(portal_instance_name: instance_name).first
-    return status 400 if subscription.nil?
+    return head(:bad_request) if subscription.nil?
 
     portal_host = SubscriptionService.portal_host subscription.portal_instance_name, subscription.production_mode
 
@@ -104,40 +105,15 @@ class SubscriptionController < ApplicationController
   end
 
 
-  def company_name_param
-    @company_name ||= params["Company-Legal-Name"]
-    raise "Company name not provided" if @company_name.nil?
-    @company_name
-  end
-
-
   def is_prod_param
     @is_stage ||= (params["prod"] == "true")
   end
 
 
-  def transform_params form
-
-    raise "Missing email" if form["Email"].nil?
-    form["Email"] = form["Email"].downcase
-    form["Confirm-Email"] = form["Confirm-Email"].downcase
-
-    raise "Emails do not match" if form["Email"] != form["Confirm-Email"]
-
-    #Add more validation logic here
-  end
-
-
   def form_params
-    signup_form = params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name",
-                                "EIN", "Company-Address-1", "Company-Address-2", "City","State", "Postal-Code",
-                                "Selected Plan").to_h
-
-    pp signup_form
-
-    transform_params signup_form
-
-    signup_form
+    params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name",
+                  "EIN", "Company-Address-1", "Company-Address-2", "City","State", "Postal-Code",
+                  "Selected Plan").to_h
   end
 
   def cancel_params

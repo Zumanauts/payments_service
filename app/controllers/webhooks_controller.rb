@@ -46,24 +46,29 @@ class WebhooksController < ApplicationController
       ref_id = event_meta_data['tabulera_subscription_id']
       raise "Tabulera Ref Id not found" if ref_id.nil?
 
+      subscription_request = SubscriptionRequest.find_by_reference_id(ref_id)
+      raise "Subscription request not found" if subscription_request.nil?
+
       stripe_subscription_id = data_object['subscription']
       raise "Subscription Id not found" if stripe_subscription_id.nil?
 
       stripe_customer_id = data_object['customer']
-      # raise "Customer Id not found" if stripe_customer_id.nil?
+      raise "Customer Id not found" if stripe_customer_id.nil?
 
-      subscription_model = Subscription.find_by_reference_id(ref_id)
-      raise "Subscription not found" if subscription_model.nil?
+      subscription_params = {
+          stripe_subscription_id: stripe_subscription_id,
+          stripe_customer_id: stripe_customer_id,
+          subscription_request_id: subscription_request.id,
+      }
 
-      subscription_model.update(stripe_subscription_id: stripe_subscription_id, stripe_customer_id: stripe_customer_id)
-      # SubscriptionStatus.create(subscription: subscription_model, stripe_event: se, status: 'trial',
-      #                           period_start: period_start, period_end: period_end)
+      subscription_model = SubscriptionService.create_subscription(subscription_params, subscription_request.company_name,
+                                                                   subscription_request.production_mode)
+
       puts "--------------------","Starting the server"
 
       tabuleraAdminService = TabuleraAdminService.from_config
       tabuleraAdminService.create_portal_instance subscription_model.portal_instance_name,
-                                                  subscription_model.signup_form_data, subscription_model.production_mode
-
+                                                  subscription_request.signup_form_data, subscription_request.production_mode
 
     when 'customer.subscription.updated', 'customer.subscription.created', 'customer.subscription.deleted'
 

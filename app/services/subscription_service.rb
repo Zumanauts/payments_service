@@ -1,6 +1,6 @@
 class SubscriptionService
 
-  def self.create_subscription(signup_form_data, company_name, production_mode)
+  def self.create_subscription(subscription_params, company_name, production_mode)
 
     subscription_model = nil
     server_name_suffixes = %w(alfa bravo delta echo golf kilo lima mike romeo).shuffle
@@ -20,16 +20,11 @@ class SubscriptionService
 
     #Searching available name
     loop do
-      begin
-        address = dns_resolve_host full_suggested_name, production_mode
-        puts "Server name '#{full_suggested_name}' in use at #{address}"
-
-      rescue Resolv::ResolvError
-        puts "Unused name #{full_suggested_name} !"
+      if hostname_not_in_use?(full_suggested_name, production_mode)
         begin
           #Name found
-          subscription_model = Subscription.create(signup_form_data: signup_form_data,
-                                                   portal_instance_name: full_suggested_name, production_mode: production_mode)
+          subscription_model = Subscription.create(subscription_params.merge({portal_instance_name: full_suggested_name,
+                                                                              production_mode: production_mode}))
           break;
         rescue ActiveRecord::RecordNotUnique
         end
@@ -38,7 +33,7 @@ class SubscriptionService
       full_suggested_name = suggested_name + '-' + (server_name_suffixes[attempts] || SecureRandom.hex(2))
 
       attempts += 1
-      raise "Failed to generate uniq domain" if attempts > 10
+      raise "Failed to generate uniq domain" if attempts > 12
     end
     
     subscription_model
@@ -50,11 +45,19 @@ class SubscriptionService
     "#{production_mode ? "" : "stage-"}#{portal_name}.tabulera.com"
   end
 
-  def self.dns_resolve_host(portal_name, production_mode)
-    host = portal_host portal_name, production_mode
-    Resolv.getaddress host
+
+  def self.hostname_not_in_use?(portal_name, production_mode)
+
+    begin
+      host = portal_host(portal_name, production_mode)
+      address = Resolv.getaddress host
+      puts "Server name '#{full_suggested_name}' in use at #{address}"
+
+      false
+    rescue Resolv::ResolvError
+      puts "Unused name #{full_suggested_name} !"
+      true
+    end
   end
-
-
 
 end
