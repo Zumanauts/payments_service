@@ -19,7 +19,7 @@ class SubscriptionController < ApplicationController
 
     product_code = is_monthly_param ? MONTHLY_SUBSCRIPTION_CODE : ANNUAL_SUBSCRIPTION_CODE
 
-    subscription_request = SubscriptionRequest(signup_form_data: signup_form, production_mode: PRODUCTION_MODE)
+    subscription_request = SubscriptionRequest.create(signup_form_data: signup_form, production_mode: PRODUCTION_MODE)
 
     cancel_url = TABULERA_CANCEL_URL + cancel_params
 
