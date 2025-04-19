@@ -112,8 +112,7 @@ class SubscriptionController < ApplicationController
 
   def form_params
     params.permit("First-Name", "Last-Name", "Email", "Confirm-Email", "Company-Legal-Name",
-                  "EIN", "Company-Address-1", "Company-Address-2", "City","State", "Postal-Code",
-                  "Selected Plan").to_h
+                  "EIN", "Company-Address-1", "Company-Address-2", "City","State", "Postal-Code").to_h
   end
 
   def cancel_params
